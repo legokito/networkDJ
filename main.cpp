@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <iostream>
  
-using SongMap = std::unordered_map<std::string, std::vector<float>>;
 
 #define SAMPLE_FORMAT   ma_format_f32
 #define CHANNEL_COUNT   2
@@ -22,19 +21,11 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     // pOutput and pInput will be valid and you can move data from pInput into pOutput. Never process more than
     // frameCount frames.
 
-    static ma_uint64 totalFrames = 0;
 
-    auto song_map = static_cast<SongMap*>(pDevice->pUserData);
+    auto pb = static_cast<Playback*>(pDevice->pUserData);
     float* pOutputF32 = static_cast<float*>(pOutput);
 
-    for (auto& [name, samples] : *song_map) {
-        for (ma_uint32 i = 0; i < frameCount * CHANNEL_COUNT; i += 2) {
-            (pOutputF32)[i] += samples[totalFrames * CHANNEL_COUNT + i];        
-            (pOutputF32)[i+1] += samples[totalFrames * CHANNEL_COUNT + i + 1];
-        }
-    }
-
-    totalFrames += frameCount;
+    pb->process_output(pOutputF32, frameCount);
 }
 
 int main(int argc, char* argv[])
@@ -47,10 +38,12 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Playback playback;
+
     /* decode and load every song into memory */
     ma_decoder_config decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
 
-    SongMap song_samples;
+    SongMap& song_samples_map = playback.get_song_samples_map();
     for (auto const& song : fs::directory_iterator{song_folder}) {
         if (song.path().extension() != ".wav") { continue; }
 
@@ -71,10 +64,10 @@ int main(int argc, char* argv[])
         }
 
         std::string song_name = song.path().filename().string();
-        song_samples[song_name].resize(total_frames * CHANNEL_COUNT);
+        song_samples_map[song_name].resize(total_frames * CHANNEL_COUNT);
 
         ma_uint64 frames_read;
-        result = ma_decoder_read_pcm_frames(&decoder, song_samples[song_name].data(), total_frames, &frames_read); 
+        result = ma_decoder_read_pcm_frames(&decoder, song_samples_map[song_name].data(), total_frames, &frames_read); 
         if (result != MA_SUCCESS || total_frames != frames_read) {
             std::cerr << "error in reading in pcm frames into map";
             return -1;
@@ -88,7 +81,7 @@ int main(int argc, char* argv[])
     config.playback.channels = CHANNEL_COUNT;               // Set to 0 to use the device's native channel count.
     config.sampleRate        = SAMPLE_RATE;           // Set to 0 to use the device's native sample rate.
     config.dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
-    config.pUserData         = &song_samples;   // Can be accessed from the device object (device.pUserData).
+    config.pUserData         = &playback;   // Can be accessed from the device object (device.pUserData).
 
     ma_device device;
     if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {

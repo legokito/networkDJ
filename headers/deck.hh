@@ -3,24 +3,22 @@
 #include <string>
 #include <vector>
 
-#define MAX_SONG_LENGTH 44100 * 2 * 300  // 300 seconds = 5 minutes
-
 class Deck {
 private:
-    float volume_ = 1;
+    float volume_ = 0;
     size_t local_anchor_ = 0;
     ssize_t grid_anchor_ = -1; // -1 means not playing
-    std::string file_name_ = "";
-    std::vector<float> song_vector_{};
+    std::string song_name_ = "";
 
 public:
-    Deck() {
-        song_vector_.resize(MAX_SONG_LENGTH);
-    }
+    bool is_playing();
 
-    void set_song(std::string song_name);
+    void play_pause();
+    void reset();
 
+    void set_volume(float val);
+    float get_volume();
 
-
-
+    void set_name(std::string& song_name);
+    const std::string& get_name();
 };
