@@ -14,4 +14,5 @@ The master broadcasts a tiny packet containing state information/meta-data. Each
 - linux and macOS only.  
 
 ## Notes 
-- https://miniaud.io/docs/examples/simple_mixing.html was helpful
+- used miniaudio to process audio https://miniaud.io/docs/examples/simple_mixing.html was helpful
+- used ncurses for simple tui

@@ -1,6 +1,8 @@
 #include "third_party/miniaudio.h"
+#include "headers/tui.hh"
 #include "headers/deck.hh"
 #include "headers/playback.hh"
+#include <ncurses.h>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -40,6 +42,19 @@ int main(int argc, char* argv[])
 
     Playback playback;
 
+    /* setup audio callback and output device */
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    config.playback.format   = SAMPLE_FORMAT;   // Set to ma_format_unknown to use the device's native format.
+    config.playback.channels = CHANNEL_COUNT;               // Set to 0 to use the device's native channel count.
+    config.sampleRate        = SAMPLE_RATE;           // Set to 0 to use the device's native sample rate.
+    config.dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
+    config.pUserData         = &playback;   // Can be accessed from the device object (device.pUserData).
+
+    ma_device device;
+    if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
+        return -1;  // Failed to initialize the device.
+    }
+
     /* decode and load every song into memory */
     ma_decoder_config decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
 
@@ -78,39 +93,18 @@ int main(int argc, char* argv[])
         ma_decoder_uninit(&decoder);
     }
 
-    ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format   = SAMPLE_FORMAT;   // Set to ma_format_unknown to use the device's native format.
-    config.playback.channels = CHANNEL_COUNT;               // Set to 0 to use the device's native channel count.
-    config.sampleRate        = SAMPLE_RATE;           // Set to 0 to use the device's native sample rate.
-    config.dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
-    config.pUserData         = &playback;   // Can be accessed from the device object (device.pUserData).
+    /* ncurses tui setup */
+    Tui tui;
 
-    ma_device device;
-    if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
-        return -1;  // Failed to initialize the device.
+    /* main loop */
+    ma_device_start(&device);    /* start audio callback */ 
+
+    while (true) {
+        tui.get_key(playback);
+        tui.redraw_ui(playback);
     }
 
-    ma_device_start(&device);     // The device is sleeping by default so you'll need to start it manually.
-
-    Deck& deck_left = playback.get_deck(0);
-    Deck& deck_right = playback.get_deck(1);
-
-    [[maybe_unused]] int exit_token = std::cin.get();
-    deck_left.set_volume(0.5);
-    deck_left.set_index(0);
-    deck_left.play_pause();
-
-    exit_token = std::cin.get();
-    deck_right.set_volume(0.5);
-    deck_right.set_index(0);
-    deck_right.play_pause();
-
-    exit_token = std::cin.get();
-    deck_left.play_pause();
-
-    exit_token = std::cin.get();
-
-    ma_device_uninit(&device);
+    ma_device_uninit(&device); /* end audio callback */
 
     return 0;
 }

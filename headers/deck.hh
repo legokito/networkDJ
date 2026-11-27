@@ -20,11 +20,12 @@ public:
     void reset();
 
     void set_volume(float val);
-    float get_volume();
+    void update_volume(float delta);
+    const float get_volume() const;
 
     ma_uint64 get_local_total_frames();
     void update_local_total_frames(ma_uint32 frameCount);
 
-    void set_index(int song_index);
-    const int get_index();
+    void set_song_index(int song_index);
+    const int get_song_index() const;
 };

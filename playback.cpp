@@ -11,11 +11,15 @@ std::vector<std::string>& Playback::get_song_names() {
     return song_names_;
 }
 
+const std::vector<std::string>& Playback::get_song_names() const {
+    return song_names_;
+}
+
 void Playback::process_output(float* output, ma_uint32 frameCount, int CHANNEL_COUNT) {
     /* play state checking and bounds checking */
 
     for (int deck = 0; deck < NUM_DECKS; deck++) { 
-        const int song_index = decks_[deck].get_index();  
+        const int song_index = decks_[deck].get_song_index();  
 
         /* no song selected */
         if (song_index == -1) { continue; }
@@ -48,6 +52,11 @@ void Playback::process_output(float* output, ma_uint32 frameCount, int CHANNEL_C
 }
 
 Deck& Playback::get_deck(int index) {
+    assert(index < NUM_DECKS);
+    return decks_[index];
+}
+ 
+const Deck& Playback::get_deck(int index) const {
     assert(index < NUM_DECKS);
     return decks_[index];
 }

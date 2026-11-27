@@ -16,7 +16,11 @@ private:
 
 public:
     SongMap& get_song_samples_map();
-    std::vector<std::string>& get_song_names();
     void process_output(float* output, ma_uint32 frameCount, int CHANNEL_COUNT);
+
     Deck& get_deck(int index);
+    const Deck& get_deck(int index) const; 
+
+    std::vector<std::string>& get_song_names();
+    const std::vector<std::string>& get_song_names() const;
 };
