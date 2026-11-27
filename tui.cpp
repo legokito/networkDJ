@@ -1,4 +1,5 @@
 #include "headers/tui.hh"
+#include <algorithm>
 
 #define LEFT_DECK 0
 #define RIGHT_DECK 1
@@ -19,11 +20,16 @@ Tui::Tui() {
 
 Tui::~Tui() {
     delwin(selector_win_);
+    delwin(left_win_);
+    delwin(right_win_);
     endwin();
 }
 
 void Tui::redraw_ui(const Playback& playback) {
-    erase();
+    werase(stdscr);
+    werase(selector_win_);
+    werase(left_win_);
+    werase(right_win_);
 
     if (row_ < 16 || col_ < 64) {
         constexpr std::string_view mesg = "please enlarge window";
@@ -41,9 +47,30 @@ void Tui::redraw_ui(const Playback& playback) {
     draw_deck(right_win_, RIGHT_DECK, playback);
     wnoutrefresh(right_win_);
     
+    /* selector logic */
     box(selector_win_, 0, 0);
-    wnoutrefresh(selector_win_);
+    int s_row, s_col;
+    getmaxyx(selector_win_, s_row, s_col);
 
+    const std::vector<std::string>& songs = playback.get_song_names();
+    int limit = std::min(static_cast<int>(songs.size()), s_row - 6);
+    int start = songs.size() <= s_row - 6 ? 0 : selected_song_index_ - (s_row - 6) + 1;
+    start = std::max(start, 0);
+
+    mvwaddnstr(selector_win_, 2, 2, "arrow up/down to navigate", s_col - 4);
+    mvwaddnstr(selector_win_, 3, 2, "arrow left/right to load track", s_col - 4);
+
+    for (int i = start; i < start + limit; i++) {
+        if (i == selected_song_index_) {
+            wattron(selector_win_, A_REVERSE);
+            mvwaddnstr(selector_win_, i - start + 5, 2, songs[i].c_str(), s_col - 4);
+            wattroff(selector_win_, A_REVERSE);
+        }
+        else {
+            mvwaddnstr(selector_win_, i - start + 5, 2, songs[i].c_str(), s_col - 4);
+        }
+    }
+    wnoutrefresh(selector_win_);
 
     doupdate();
 }
@@ -61,16 +88,22 @@ void Tui::draw_deck(WINDOW *win, int deck_index, const Playback& playback) {
     if (deck_index == LEFT_DECK) {
         mvwprintw(win, 2, 2, "volume up:   d");
         mvwprintw(win, 3, 2, "volume down: c");
-        mvwprintw(win, 5, 2, "cur volume:  %.1f", deck.get_volume());
-        mvwprintw(win, row - 6, 2, "reset track: a");
-        mvwprintw(win, row - 5, 2, "play/pause:  z");
+        mvwprintw(win, row - 8, 2, "reset track: a");
+        mvwprintw(win, row - 7, 2, "play/pause:  z");
     }
     else if (deck_index == RIGHT_DECK) {
         mvwprintw(win, 2, 2, "volume up:   h");
         mvwprintw(win, 3, 2, "volume down: b");
-        mvwprintw(win, 5, 2, "cur volume:  %.1f", deck.get_volume());
-        mvwprintw(win, row - 6, 2, "reset track: k");
-        mvwprintw(win, row - 5, 2, "play/pause:  m");
+        mvwprintw(win, row - 8, 2, "reset track: k");
+        mvwprintw(win, row - 7, 2, "play/pause:  m");
+    }
+    mvwprintw(win, 5, 2, "cur volume:  %.1f", deck.get_volume());
+
+    if (deck.is_playing()) {
+        mvwprintw(win, row - 5, 2, "is playing: %s", "ya");
+    }
+    else {
+        mvwprintw(win, row - 5, 2, "is playing: %s", "no");
     }
 }
 
@@ -113,15 +146,22 @@ void Tui::get_key(Playback& playback) {
         }
     }
     else if (ch == KEY_DOWN) {
-        if (selected_song_index_ < playback.get_song_names().size() - 1) {
+        int size = playback.get_song_names().size();
+        if (size > 0 && selected_song_index_ < size - 1) {
             selected_song_index_++;
         }
     }
     else if (ch == KEY_LEFT) {
-        playback.get_deck(0).set_song_index(selected_song_index_); 
+        int size = playback.get_song_names().size();
+        if (size > 0) {
+            playback.get_deck(0).set_song_index(selected_song_index_); 
+        }
     }
     else if (ch == KEY_RIGHT) {
-        playback.get_deck(1).set_song_index(selected_song_index_); 
+        int size = playback.get_song_names().size();
+        if (size > 0) {
+            playback.get_deck(1).set_song_index(selected_song_index_); 
+        }
     }
     
     /* left deck */

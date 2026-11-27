@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     SongMap& song_samples_map = playback.get_song_samples_map();
     std::vector<std::string>& song_names_ = playback.get_song_names();
     for (auto const& song : fs::directory_iterator{song_folder}) {
-        if (song.path().extension() != ".wav") { continue; }
+        if (song.path().extension() != ".wav" && song.path().extension() != ".mp3") { continue; }
 
         ma_decoder decoder;
         ma_result result; 
@@ -85,7 +85,8 @@ int main(int argc, char* argv[])
 
         ma_uint64 frames_read;
         result = ma_decoder_read_pcm_frames(&decoder, song_samples_map[song_name].data(), total_frames, &frames_read); 
-        if (result != MA_SUCCESS || total_frames != frames_read) {
+        song_samples_map[song_name].resize(frames_read * CHANNEL_COUNT);
+        if (result != MA_SUCCESS) {
             std::cerr << "error in reading in pcm frames into map";
             return -1;
         }

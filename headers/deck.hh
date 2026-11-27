@@ -15,6 +15,7 @@ private:
 
 public:
     bool is_playing();
+    const bool is_playing() const;
 
     void play_pause();
     void reset();

@@ -5,6 +5,10 @@ bool Deck::is_playing() {
     return grid_anchor_ != -1;
 }
 
+const bool Deck::is_playing() const {
+    return grid_anchor_ != -1;
+}
+
 void Deck::play_pause() {
     if (this->is_playing()) {
         // local_anchor_ = /* cur grid value */ - grid_anchor_; 
@@ -37,6 +41,7 @@ const float Deck::get_volume() const {
 
 void Deck::set_song_index(int song_index) {
     song_index_ = song_index;
+    reset();
 }
 
 const int Deck::get_song_index() const {
