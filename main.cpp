@@ -25,7 +25,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     auto pb = static_cast<Playback*>(pDevice->pUserData);
     float* pOutputF32 = static_cast<float*>(pOutput);
 
-    pb->process_output(pOutputF32, frameCount);
+    pb->process_output(pOutputF32, frameCount, CHANNEL_COUNT);
 }
 
 int main(int argc, char* argv[])
@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
     ma_decoder_config decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
 
     SongMap& song_samples_map = playback.get_song_samples_map();
+    std::vector<std::string>& song_names_ = playback.get_song_names();
     for (auto const& song : fs::directory_iterator{song_folder}) {
         if (song.path().extension() != ".wav") { continue; }
 
@@ -64,6 +65,7 @@ int main(int argc, char* argv[])
         }
 
         std::string song_name = song.path().filename().string();
+        song_names_.push_back(song_name); 
         song_samples_map[song_name].resize(total_frames * CHANNEL_COUNT);
 
         ma_uint64 frames_read;
@@ -90,10 +92,25 @@ int main(int argc, char* argv[])
 
     ma_device_start(&device);     // The device is sleeping by default so you'll need to start it manually.
 
-    int exit_token = std::cin.get();
+    Deck& deck_left = playback.get_deck(0);
+    Deck& deck_right = playback.get_deck(1);
+
+    [[maybe_unused]] int exit_token = std::cin.get();
+    deck_left.set_volume(0.5);
+    deck_left.set_index(0);
+    deck_left.play_pause();
+
+    exit_token = std::cin.get();
+    deck_right.set_volume(0.5);
+    deck_right.set_index(0);
+    deck_right.play_pause();
+
+    exit_token = std::cin.get();
+    deck_left.play_pause();
+
+    exit_token = std::cin.get();
 
     ma_device_uninit(&device);
-
 
     return 0;
 }
