@@ -27,7 +27,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     auto pb = static_cast<Playback*>(pDevice->pUserData);
     float* pOutputF32 = static_cast<float*>(pOutput);
 
-    pb->process_output(pOutputF32, frameCount, CHANNEL_COUNT);
+    pb->process_output(pOutputF32, frameCount);
 }
 
 int main(int argc, char* argv[])
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    Playback playback;
+    Playback playback(CHANNEL_COUNT, SAMPLE_RATE);
 
     /* setup audio callback and output device */
     ma_device_config config = ma_device_config_init(ma_device_type_playback);

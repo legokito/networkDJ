@@ -3,7 +3,7 @@ CXXFLAGS = -std=c++20 -O2 -Wall -I.
 LDFLAGS  = -framework CoreFoundation -framework CoreAudio -framework AudioToolbox
 LDLIBS = -lncurses
 
-SRC = main.cpp miniaudio.cpp deck.cpp playback.cpp tui.cpp
+SRC = main.cpp miniaudio.cpp deck.cpp playback.cpp tui.cpp grid.cpp
 OBJ = $(SRC:.cpp=.o)
 DEP = $(OBJ:.o=.d)
 
