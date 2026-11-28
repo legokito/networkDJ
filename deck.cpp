@@ -1,4 +1,6 @@
 #include "headers/deck.hh"
+#include "headers/playback.hh" //circular dependency 
+
 #include <algorithm>
 
 bool Deck::is_playing() {
@@ -13,7 +15,7 @@ void Deck::play_pause(Playback& playback) {
     /* use grid to resolve where the anchors should go */
     Grid& grid = playback.get_grid();
     int sample_rate = playback.get_sample_rate();
-    int channel_count = playback.get_channel_count();
+    // int channel_count = playback.get_channel_count();
     int bpm = grid.get_BPM();
 
     int64_t beat_frame_len = (sample_rate * 60) / bpm;
@@ -30,7 +32,7 @@ void Deck::play_pause(Playback& playback) {
         }
     }
     else {
-        cur_grid_frames = std::max(0, cur_grid_frames-1000); /* 1000 is num of frames grace period for quantizing backward */
+        cur_grid_frames = std::max(static_cast<int64_t>(0), cur_grid_frames-1000); /* 1000 is num of frames grace period for quantizing backward */
 
         grid_anchor_ = cur_grid_frames + beat_frame_len - (cur_grid_frames % beat_frame_len);
     }
@@ -39,8 +41,6 @@ void Deck::play_pause(Playback& playback) {
 void Deck::reset() {
     local_anchor_ = 0;
     grid_anchor_ = -1;
-
-    local_total_frames_ = 0;
 }
 
 void Deck::set_volume(float val){
@@ -63,6 +63,15 @@ void Deck::set_song_index(int song_index) {
 const int Deck::get_song_index() const {
     return song_index_;
 }
+
+int64_t Deck::get_local_anchor() {
+    return local_anchor_;
+}
+
+int64_t Deck::get_grid_anchor() {
+    return grid_anchor_;
+}
+
 
 // ma_uint64 Deck::get_local_total_frames() {
 //     return local_total_frames_;

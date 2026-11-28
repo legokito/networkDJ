@@ -3,7 +3,9 @@
 #include "third_party/miniaudio.h"
 #include "headers/deck.hh"
 #include "headers/grid.hh"
+
 #include <unordered_map>
+#include <vector>
 
 using SongMap = std::unordered_map<std::string, std::vector<float>>;
 
@@ -19,6 +21,8 @@ private:
     Grid grid_;
 
 public:
+    Playback(int CHANNEL_COUNT, int SAMPLE_RATE);
+
     SongMap& get_song_samples_map();
     void process_output(float* output, ma_uint32 frameCount);
 

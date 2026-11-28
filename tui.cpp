@@ -166,7 +166,7 @@ void Tui::get_key(Playback& playback) {
     
     /* left deck */
     else if (ch == 'z') {
-        playback.get_deck(0).play_pause();
+        playback.get_deck(0).play_pause(playback);
     }
     else if (ch == 'a') {
         playback.get_deck(0).reset();
@@ -180,7 +180,7 @@ void Tui::get_key(Playback& playback) {
 
     /* right deck */
     else if (ch == 'm') {
-        playback.get_deck(1).play_pause();
+        playback.get_deck(1).play_pause(playback);
     }
     else if (ch == 'k') {
         playback.get_deck(1).reset();

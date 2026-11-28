@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+class Playback; // circular dependency forward declaration
+
 class Deck {
 private:
     std::atomic<float> volume_ = 0;
@@ -30,4 +32,7 @@ public:
 
     void set_song_index(int song_index);
     const int get_song_index() const;
+
+    int64_t get_grid_anchor();
+    int64_t get_local_anchor();
 };

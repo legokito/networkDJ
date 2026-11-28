@@ -22,8 +22,7 @@ const std::vector<std::string>& Playback::get_song_names() const {
 void Playback::process_output(float* output, ma_uint32 frameCount) {
     /* play state checking and bounds checking - done */
 
-    int grid_interval = (SAMPLE_RATE_ / grid_.get_BPM()) * 60;
-    size_t total_frames = grid_.get_total_frame_counter();
+    int64_t total_frames = grid_.get_total_frame_counter();
 
     for (int deck = 0; deck < NUM_DECKS; deck++) { 
         const int song_index = decks_[deck].get_song_index();  
@@ -38,23 +37,31 @@ void Playback::process_output(float* output, ma_uint32 frameCount) {
 
         const std::string& song_name = song_names_[song_index];
 
-        // ma_uint64 local_total_frames = decks_[deck].get_local_total_frames();
+        std::vector<float>& vec = song_samples_map_[song_name];
+        int64_t song_size = vec.size();
 
         float volume = decks_[deck].get_volume();
-        ma_uint64 song_size = song_samples_map_[song_name].size();
+        int64_t local_anchor = decks_[deck].get_local_anchor();
+        int64_t grid_anchor = decks_[deck].get_grid_anchor();
+
+        /* scheduled for later - clips songs more often than it needs to; not priority to fix */
+        if (grid_anchor > total_frames) { 
+            continue;
+        }
+
+        int64_t actual_local_position = total_frames - grid_anchor + local_anchor;
 
         for (ma_uint32 i = 0; i < frameCount * CHANNEL_COUNT_; i += 2) {
             /* finished song */
-            if (local_total_frames * CHANNEL_COUNT_ + i >= song_size) {
-                decks_[deck].play_pause(grid_); 
+            if (actual_local_position * CHANNEL_COUNT_ + i >= song_size) {
+                /* says currently playing even when track is finished; not priority to fix */ 
                 break;
             }
 
-            (output)[i] += song_samples_map_[song_name][local_total_frames * CHANNEL_COUNT_ + i] * volume; /* have function to do the dsp */       
-            (output)[i+1] += song_samples_map_[song_name][local_total_frames * CHANNEL_COUNT_ + i + 1] * volume;
+            (output)[i] += vec[actual_local_position * CHANNEL_COUNT_ + i] * volume; /* have function to do the dsp */       
+            (output)[i+1] += vec[actual_local_position * CHANNEL_COUNT_ + i + 1] * volume;
         }
 
-        // decks_[deck].update_local_total_frames(frameCount);
     }
 
     grid_.update_total_frame_counter(frameCount);
@@ -70,22 +77,22 @@ const Deck& Playback::get_deck(int index) const {
     return decks_[index];
 }
 
-int Deck::get_channel_count() {
+int Playback::get_channel_count() {
     return CHANNEL_COUNT_;
 }
 
-const int Deck::get_channel_count() const {
+const int Playback::get_channel_count() const {
     return CHANNEL_COUNT_;
 }
 
-int Deck::get_sample_rate() {
+int Playback::get_sample_rate() {
     return SAMPLE_RATE_;
 }
 
-const int Deck::get_sample_rate() const {
+const int Playback::get_sample_rate() const {
     return SAMPLE_RATE_;
 }
 
-Grid& Deck::get_grid() {
+Grid& Playback::get_grid() {
     return grid_;
 }
